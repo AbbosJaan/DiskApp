@@ -7,7 +7,7 @@ using DiskApp.Models;
 
 namespace DiskApp.Areas.Identity.Data;
 
-public class AppDbContext : IdentityDbContext<AppUser>
+public class AppDbContext : IdentityDbContext<AppUser, Role, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -16,20 +16,81 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<Disk> Disks { get; set; }  
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        base.OnModelCreating(builder);
-        // Customize the ASP.NET Identity model and override the defaults if needed.
-        // For example, you can rename the ASP.NET Identity table names and more.
-        // Add your customizations after calling base.OnModelCreating(builder);
         builder.ApplyConfiguration(new AppUserEntityConfiguration());
+        builder.ApplyConfiguration(new RoleEntityConfiguration());
+        builder.ApplyConfiguration(new RoleUserConfiguration());
+        base.OnModelCreating(builder);
     }
-    public DbSet<DiskApp.Models.DiskModel> DiskModel { get; set; }
 }
 
 public class AppUserEntityConfiguration : IEntityTypeConfiguration<AppUser>
 {
     public void Configure(EntityTypeBuilder<AppUser> builder)
     {
-        builder.Property(u => u.FirsName).HasMaxLength(255);
-        builder.Property(u => u.LastName).HasMaxLength(255);
+        var hasher = new PasswordHasher<AppUser>();
+        builder.HasData(new AppUser()
+        {
+            Id = 1,
+            Email = "admin@site.com",
+            FirsName = "Admin",
+            LastName = "Adminstration",
+            PasswordHash = hasher.HashPassword(null, "Qwerty123!"),
+            NormalizedUserName = "ADMIN@SITE.COM",
+            NormalizedEmail = "ADMIN@SITE.COM",
+            EmailConfirmed = true,
+            UserName = "admin@site.com",
+            LockoutEnabled = true,
+            SecurityStamp = Guid.NewGuid().ToString()
+        },
+        new AppUser()
+        {
+            Id = 2,
+            Email = "user@site.com",
+            FirsName = "User",
+            LastName = "User",
+            PasswordHash = hasher.HashPassword(null, "Qwerty123!"),
+            NormalizedUserName = "USER@SITE.COM",
+            NormalizedEmail = "USER@SITE.COM",
+            EmailConfirmed = true,
+            UserName = "user@site.com",
+            LockoutEnabled = true,
+            SecurityStamp = Guid.NewGuid().ToString()
+        });
+    }
+}
+
+public class RoleEntityConfiguration : IEntityTypeConfiguration<Role>
+{
+    public void Configure(EntityTypeBuilder<Role> builder)
+    {
+        builder.HasData(new Role()
+        {
+            Id = 1,
+            Name = "Admin",
+            NormalizedName = "ADMIN"
+        },
+        new()
+        {
+            Id = 2,
+            Name = "User",
+            NormalizedName = "USER"
+        });
+    }
+}
+
+public class RoleUserConfiguration : IEntityTypeConfiguration<IdentityUserRole<int>>
+{
+    public void Configure(EntityTypeBuilder<IdentityUserRole<int>> builder)
+    {
+        builder.HasData(new IdentityUserRole<int>()
+        {
+            RoleId = 1,
+            UserId = 1,
+        },
+        new()
+        {
+            RoleId = 2,
+            UserId = 2,
+        });
     }
 }
